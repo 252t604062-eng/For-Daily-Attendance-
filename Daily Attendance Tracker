@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Attendance</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #FAF7F1;
+    --card: #FFFFFF;
+    --ink: #2B2B26;
+    --ink-soft: #6B6A63;
+    --line: #E7E3D8;
+    --sage: #6B9080;
+    --sage-bg: #E3EDE7;
+    --coral: #E07A5F;
+    --coral-bg: #FBE6E0;
+    --gold: #D4A24C;
+    --gold-bg: #FBF0DD;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'Nunito', sans-serif;
+    padding-bottom: 40px;
+  }
+  header {
+    position: sticky;
+    top: 0;
+    background: var(--paper);
+    z-index: 10;
+    padding: 18px 16px 10px;
+    border-bottom: 1px solid var(--line);
+  }
+  h1 {
+    font-family: 'Patrick Hand', cursive;
+    font-size: 2rem;
+    margin: 0 0 4px;
+    letter-spacing: 0.3px;
+  }
+  .subtitle {
+    font-size: 0.82rem;
+    color: var(--ink-soft);
+    margin: 0 0 14px;
+  }
+  .date-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  .date-row button.nav {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    width: 38px;
+    height: 38px;
+    font-size: 1.1rem;
+    color: var(--ink-soft);
+    flex-shrink: 0;
+  }
+  .date-row input[type="date"] {
+    flex: 1;
+    font-family: 'Nunito', sans-serif;
+    font-weight: 700;
+    font-size: 1rem;
+    padding: 9px 10px;
+    border-radius: 10px;
+    border: 1px solid var(--line);
+    background: var(--card);
+    color: var(--ink);
+  }
+  .search-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  .search-row input {
+    flex: 1;
+    font-family: 'Nunito', sans-serif;
+    font-size: 0.95rem;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid var(--line);
+    background: var(--card);
+    color: var(--ink);
+  }
+  .search-row input::placeholder { color: var(--ink-soft); }
+  .actions-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  button.primary {
+    background: var(--sage);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    padding: 10px 16px;
+    font-family: 'Nunito', sans-serif;
+    font-weight: 700;
+    font-size: 0.9rem;
+  }
+  .summary {
+    font-size: 0.8rem;
+    color: var(--ink-soft);
+    margin-left: auto;
+  }
+  .summary b.p { color: var(--sage); }
+  .summary b.a { color: var(--coral); }
+
+  main { padding: 12px 16px; }
+  .empty {
+    text-align: center;
+    color: var(--ink-soft);
+    padding: 60px 20px;
+    font-size: 0.95rem;
+  }
+  .empty span { font-family: 'Patrick Hand', cursive; font-size: 1.3rem; display: block; margin-bottom: 6px; color: var(--ink); }
+
+  .row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 12px 12px;
+    margin-bottom: 8px;
+  }
+  .row .idx {
+    font-size: 0.75rem;
+    color: var(--ink-soft);
+    width: 20px;
+    text-align: center;
+    flex-shrink: 0;
+  }
+  .row .info { flex: 1; min-width: 0; }
+  .row .name { font-weight: 700; font-size: 0.98rem; }
+  .row .ticket { font-size: 0.75rem; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+
+  .status-btn {
+    flex-shrink: 0;
+    border: none;
+    border-radius: 10px;
+    width: 56px;
+    height: 40px;
+    font-family: 'Patrick Hand', cursive;
+    font-size: 1.15rem;
+    font-weight: 400;
+    background: var(--gold-bg);
+    color: var(--gold);
+  }
+  .status-btn[data-status="P"] { background: var(--sage-bg); color: var(--sage); }
+  .status-btn[data-status="A"] { background: var(--coral-bg); color: var(--coral); }
+
+  .edit-btn {
+    flex-shrink: 0;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    width: 38px;
+    height: 38px;
+    color: var(--ink-soft);
+    font-size: 0.95rem;
+  }
+
+  .overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(43,43,38,0.4);
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    z-index: 50;
+  }
+  .sheet {
+    background: var(--card);
+    width: 100%;
+    max-width: 480px;
+    border-radius: 18px 18px 0 0;
+    padding: 20px 18px 28px;
+  }
+  .sheet h2 {
+    font-family: 'Patrick Hand', cursive;
+    font-size: 1.4rem;
+    margin: 0 0 14px;
+  }
+  .sheet label {
+    display: block;
+    font-size: 0.78rem;
+    color: var(--ink-soft);
+    margin-bottom: 4px;
+    margin-top: 12px;
+  }
+  .sheet input {
+    width: 100%;
+    font-family: 'Nunito', sans-serif;
+    font-size: 0.95rem;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid var(--line);
+    background: var(--paper);
+    color: var(--ink);
+  }
+  .sheet .btn-row {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+  }
+  .sheet .btn-row button {
+    flex: 1;
+    padding: 11px;
+    border-radius: 10px;
+    font-family: 'Nunito', sans-serif;
+    font-weight: 700;
+    font-size: 0.9rem;
+    border: none;
+  }
+  .btn-cancel { background: var(--paper); color: var(--ink-soft); border: 1px solid var(--line) !important; }
+  .btn-save { background: var(--sage); color: white; }
+  .btn-delete { background: var(--coral-bg); color: var(--coral); }
+  .status-msg {
+    font-size: 0.75rem;
+    color: var(--ink-soft);
+    text-align: center;
+    padding: 8px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Attendance</h1>
+  <p class="subtitle" id="subtitle">Loading your roster…</p>
+  <div class="date-row">
+    <button class="nav" id="prevDay">‹</button>
+    <input type="date" id="dateInput">
+    <button class="nav" id="nextDay">›</button>
+  </div>
+  <div class="search-row">
+    <input type="text" id="search" placeholder="Search name or hall ticket">
+  </div>
+  <div class="actions-row">
+    <button class="primary" id="addBtn">+ Add student</button>
+    <div class="summary" id="summary"></div>
+  </div>
+</header>
+
+<main id="list"></main>
+
+<div id="modalRoot"></div>
+
+<script>
+const dateInput = document.getElementById('dateInput');
+const searchInput = document.getElementById('search');
+const listEl = document.getElementById('list');
+const summaryEl = document.getElementById('summary');
+const subtitleEl = document.getElementById('subtitle');
+const modalRoot = document.getElementById('modalRoot');
+
+let students = [];
+let attendance = {}; // { studentId: 'P' | 'A' }
+let currentDate = todayStr();
+let ready = false;
+
+const DEFAULT_ROSTER = [
+["252TA04001","Lakshmi prasanna"],
+["252TA04002","A.Rajeshwari"],
+["252TA04003","A.P Vyshali"],
+["252TA04004","A.Vyshnavi"],
+["252TA04005","B.V Meghana"],
+["252TA04006","B.Harini"],
+["252TA04007","B.Maheswari"],
+["252TA04008","B.Lalitha"],
+["252TA04009","B.Radhika"],
+["252TA04010","B.Chandrakala"],
+["252TA04011","B.Madhavi"],
+["252TA04012","B.Sridevi"],
+["252TA04013","B.Sindhu"],
+["252TA04014","B.Geetha"],
+["252TA04015","Bestha Kavya"],
+["252TA04016","B.Triveni"],
+["252TA04017","B.l Meghana"],
+["252TA04018","B.Pavani"],
+["252TA04019","B.Srilekha"],
+["252TA04020","B.Supriya"],
+["252TA04021","B.Vaishnavi"],
+["252TA04022","B.Vardhini"],
+["252TA04023","B.Madhulika Reddy"],
+["252TA04024","C.Kavitha"],
+["252TA04025","C.Mahitha"],
+["252TA04026","C.Navya"],
+["252TA04027","C.Likhitheswari Reddy"],
+["252TA04028","D.Ameena Bee"],
+["252TA04029","D.Siva Ganga"],
+["252TA04030","D.Bhavya"],
+["252TA04031","D.Hemavathi"],
+["252TA04032","D.Sumalatha"],
+["252TA04033","D.Rekha"],
+["252TA04034","D.Bhavitha"],
+["252TA04035","D.Karishma"],
+["252TA04036","D.Sana Mouli"],
+["252TA04044","G.Archana"],
+["252TA04048","G.V Sainee"],
+["252TA04052","J.Joshna"],
+["252TA04056","Juveriya Fathima"],
+["252TA04058","K.Himabindu"],
+["252TA04059","K.Jyoshna Reddy"],
+["252TA04061","K.Rahini"],
+["252TA04063","K.Sreeja"],
+["252TA04075","K.Mahalakshmi"],
+["252TA04076","K.Pavithra"],
+["252TA04077","K.Revathi"],
+["252TA04078","K.Rukmini"],
+["252TA04079","K.Sireesha"],
+["252TA04080","K.Varalakshmi"],
+["252TA04091","M.Hemalatha"],
+["252TA04096","N.Asra Khatoon"],
+["252TA04111","R.Geethika Reddy"],
+["252TA04112","R.Lakshmi Sahasra"],
+["252TA04120","T.Sriyutha Chowdhary"],
+["252TA04127","V.M Vyshnavi"],
+["252TA04128","V.Sreeja"],
+["252T604001","A.Spandhana"],
+["252T604007","Burru.Kavya"],
+["252T604008","C.Krishna Priya"],
+["252T604016","G.Sadiya"],
+["252T604031","N.G Harika"],
+["252T604037","P.Akshaya"],
+["252T604049","S.Nabiya Sulthana"],
+["252T604053","S.Asma Zareen"],
+["252T604062","V.Hema Harshini Reddy"],
+["262TA04502","Banda  Harika"],
+["262TA04503","Bommineni Guna Sree"],
+["262TA04506","Pamela Vennela"],
+["262TA04507","Satri Sruthi"],
+["262TA04509","S.Botla Bhavishya"],
+["262T604501","A Malleswari"],
+["262T604504","Kummari Amurutha"]
+];
+
+function todayStr() {
+  const d = new Date();
+  const off = d.getTimezoneOffset();
+  const local = new Date(d.getTime() - off * 60000);
+  return local.toISOString().slice(0, 10);
+}
+
+function fmtDateLabel(str) {
+  const [y,m,d] = str.split('-').map(Number);
+  const dt = new Date(y, m-1, d);
+  return dt.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+function genId() {
+  return 's_' + Date.now() + '_' + Math.random().toString(36).slice(2,8);
+}
+
+async function loadStudents() {
+  try {
+    const res = await window.storage.get('students', false);
+    students = res ? JSON.parse(res.value) : [];
+  } catch (e) {
+    students = [];
+  }
+}
+
+async function saveStudents() {
+  try {
+    await window.storage.set('students', JSON.stringify(students), false);
+  } catch (e) { console.error('save students failed', e); }
+}
+
+async function loadAttendance(dateStr) {
+  try {
+    const res = await window.storage.get('attendance:' + dateStr, false);
+    attendance = res ? JSON.parse(res.value) : {};
+  } catch (e) {
+    attendance = {};
+  }
+}
+
+async function saveAttendance(dateStr) {
+  try {
+    await window.storage.set('attendance:' + dateStr, JSON.stringify(attendance), false);
+  } catch (e) { console.error('save attendance failed', e); }
+}
+
+function nextTicketSuggestion() {
+  if (students.length === 0) return '';
+  const nums = students
+    .map(s => s.ticket.match(/(\d+)$/))
+    .filter(Boolean)
+    .map(m => ({ full: m[0], num: parseInt(m[1], 10) }));
+  if (nums.length === 0) return '';
+  const max = nums.reduce((a,b) => b.num > a.num ? b : a);
+  const last = students.find(s => s.ticket.endsWith(max.full));
+  const prefix = last.ticket.slice(0, last.ticket.length - max.full.length);
+  const width = max.full.length;
+  const nextNum = (max.num + 1).toString().padStart(width, '0');
+  return prefix + nextNum;
+}
+
+function render() {
+  subtitleEl.textContent = fmtDateLabel(currentDate);
+
+  const q = searchInput.value.trim().toLowerCase();
+  const filtered = students.filter(s =>
+    s.name.toLowerCase().includes(q) || s.ticket.toLowerCase().includes(q)
+  );
+
+  let pCount = 0, aCount = 0;
+  students.forEach(s => {
+    const st = attendance[s.id];
+    if (st === 'P') pCount++;
+    else if (st === 'A') aCount++;
+  });
+  summaryEl.innerHTML = students.length
+    ? `<b class="p">${pCount}P</b> · <b class="a">${aCount}A</b> · ${students.length - pCount - aCount} unmarked`
+    : '';
+
+  if (students.length === 0) {
+    listEl.innerHTML = `<div class="empty"><span>No students yet</span>Tap "+ Add student" to build your roster.</div>`;
+    return;
+  }
+  if (filtered.length === 0) {
+    listEl.innerHTML = `<div class="empty"><span>No matches</span>Try a different name or hall ticket.</div>`;
+    return;
+  }
+
+  listEl.innerHTML = filtered.map((s, i) => {
+    const status = attendance[s.id] || '';
+    const label = status === 'P' ? 'P' : status === 'A' ? 'A' : '—';
+    return `
+      <div class="row" data-id="${s.id}">
+        <div class="idx">${i + 1}</div>
+        <div class="info">
+          <div class="name">${escapeHtml(s.name)}</div>
+          <div class="ticket">${escapeHtml(s.ticket)}</div>
+        </div>
+        <button class="status-btn" data-status="${status}" data-action="toggle">${label}</button>
+        <button class="edit-btn" data-action="edit">✎</button>
+      </div>
+    `;
+  }).join('');
+}
+
+function escapeHtml(str) {
+  const d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
+}
+
+listEl.addEventListener('click', async (e) => {
+  const btn = e.target.closest('button');
+  if (!btn) return;
+  const row = e.target.closest('.row');
+  const id = row.dataset.id;
+  if (btn.dataset.action === 'toggle') {
+    const cur = attendance[id];
+    const next = cur === 'P' ? 'A' : cur === 'A' ? '' : 'P';
+    if (next === '') delete attendance[id];
+    else attendance[id] = next;
+    render();
+    await saveAttendance(currentDate);
+  } else if (btn.dataset.action === 'edit') {
+    openEditModal(id);
+  }
+});
+
+document.getElementById('addBtn').addEventListener('click', () => openEditModal(null));
+searchInput.addEventListener('input', render);
+dateInput.addEventListener('change', async () => {
+  currentDate = dateInput.value;
+  await loadAttendance(currentDate);
+  render();
+});
+document.getElementById('prevDay').addEventListener('click', async () => {
+  const d = new Date(currentDate + 'T00:00:00');
+  d.setDate(d.getDate() - 1);
+  currentDate = d.toISOString().slice(0,10);
+  dateInput.value = currentDate;
+  await loadAttendance(currentDate);
+  render();
+});
+document.getElementById('nextDay').addEventListener('click', async () => {
+  const d = new Date(currentDate + 'T00:00:00');
+  d.setDate(d.getDate() + 1);
+  currentDate = d.toISOString().slice(0,10);
+  dateInput.value = currentDate;
+  await loadAttendance(currentDate);
+  render();
+});
+
+function openEditModal(id) {
+  const existing = id ? students.find(s => s.id === id) : null;
+  const overlay = document.createElement('div');
+  overlay.className = 'overlay';
+  overlay.innerHTML = `
+    <div class="sheet">
+      <h2>${existing ? 'Edit student' : 'Add student'}</h2>
+      <label>Name</label>
+      <input type="text" id="fName" value="${existing ? escapeHtml(existing.name) : ''}" placeholder="e.g. A.P Vyshali">
+      <label>Hall ticket</label>
+      <input type="text" id="fTicket" value="${existing ? escapeHtml(existing.ticket) : nextTicketSuggestion()}" placeholder="e.g. 252TA04016">
+      <div class="btn-row">
+        ${existing ? '<button class="btn-delete" id="fDelete">Delete</button>' : ''}
+        <button class="btn-cancel" id="fCancel">Cancel</button>
+        <button class="btn-save" id="fSave">Save</button>
+      </div>
+    </div>
+  `;
+  modalRoot.appendChild(overlay);
+  const nameInput = overlay.querySelector('#fName');
+  const ticketInput = overlay.querySelector('#fTicket');
+  nameInput.focus();
+
+  overlay.querySelector('#fCancel').addEventListener('click', () => overlay.remove());
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+
+  if (existing) {
+    overlay.querySelector('#fDelete').addEventListener('click', async () => {
+      students = students.filter(s => s.id !== existing.id);
+      delete attendance[existing.id];
+      await saveStudents();
+      await saveAttendance(currentDate);
+      overlay.remove();
+      render();
+    });
+  }
+
+  overlay.querySelector('#fSave').addEventListener('click', async () => {
+    const name = nameInput.value.trim();
+    const ticket = ticketInput.value.trim();
+    if (!name || !ticket) return;
+    if (existing) {
+      existing.name = name;
+      existing.ticket = ticket;
+    } else {
+      students.push({ id: genId(), name, ticket });
+    }
+    await saveStudents();
+    overlay.remove();
+    render();
+  });
+}
+
+async function init() {
+  currentDate = todayStr();
+  dateInput.value = currentDate;
+  await loadStudents();
+  await loadAttendance(currentDate);
+  ready = true;
+  render();
+}
+
+init();
+</script>
+</body>
+</html>
